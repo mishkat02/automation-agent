@@ -1,27 +1,23 @@
-
-# Use Python 3.12 with a small base image
 FROM python:3.12-slim-bookworm
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+# Install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
 
-# Install uv (package manager)
+# Download and install uv
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
 RUN sh /uv-installer.sh && rm /uv-installer.sh
 
-# Set working directory
+# Install FastAPI and Uvicorn
+RUN pip install fastapi uvicorn
+
+# Ensure the installed binary is on the `PATH`
+ENV PATH="/root/.local/bin:$PATH"
+
+# Set up the application directory
 WORKDIR /app
 
 # Copy application files
-COPY . .
+COPY app.py /app
 
-# Install Python dependencies
-RUN uv pip install --no-cache-dir -r requirements.txt
-
-# Expose the port FastAPI runs on
-EXPOSE 8000
-
-# Run FastAPI with uv
-CMD ["uv", "run", "python", "app.py"]
+# Explicitly set the correct binary path and use `sh -c`
+CMD ["/root/.local/bin/uv", "run", "app.py"]
